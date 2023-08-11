@@ -1,0 +1,1040 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "2a671501-c5b4-43cb-936c-dfb9611be3d2",
+   "metadata": {},
+   "source": [
+    "Challenge\n",
+    "In this lab, the objective is to identify the customers who were active in both May and June, and how did their activity differ between months. \n",
+    "To achieve this, follow these steps:\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7aecc69d-e2d4-446d-8d37-f34067319976",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "# 1-Establish a connection between Python and the Sakila database."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "60d93b08-b336-4282-a000-49dc5f35185a",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Requirement already satisfied: pymysql in c:\\users\\jmcso\\anaconda3\\lib\\site-packages (1.1.0)\n",
+      "Requirement already satisfied: sqlalchemy in c:\\users\\jmcso\\anaconda3\\lib\\site-packages (1.4.39)\n",
+      "Requirement already satisfied: greenlet!=0.4.17 in c:\\users\\jmcso\\anaconda3\\lib\\site-packages (from sqlalchemy) (2.0.1)\n"
+     ]
+    }
+   ],
+   "source": [
+    "!pip install pymysql\n",
+    "!pip install sqlalchemy"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "a901f5cb-8bb9-4c24-8650-272853788ef3",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "\n",
+    "import pymysql                        # for getting data from a SQL database\n",
+    "from sqlalchemy import create_engine  # for establishing the connection and authentication\n",
+    "\n",
+    "from getpass import getpass  # To get the password without showing the input"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "dc23af85-e8de-4ed4-897e-bf817f897f6c",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdin",
+     "output_type": "stream",
+     "text": [
+      " ········\n"
+     ]
+    }
+   ],
+   "source": [
+    "password = getpass()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "f8e1c148-367c-41d4-97a7-6e3d86ccc941",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "connection_string = 'mysql+pymysql://root:'+password+'@localhost/sakila'\n",
+    "engine = create_engine(connection_string)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "a9a58cd9-299e-4d44-aea0-25bc1ddba25e",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'mysql+pymysql://root:Sobreiro1@localhost/sakila'"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "connection_string"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "f6606721-57c5-4cda-aeb9-1eddfd4dbcba",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "sqlalchemy.engine.base.Engine"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "type(engine)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "id": "3981c4b0-4f6c-49b5-ae2a-c2281fa0d291",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>rental_id</th>\n",
+       "      <th>rental_date</th>\n",
+       "      <th>inventory_id</th>\n",
+       "      <th>customer_id</th>\n",
+       "      <th>return_date</th>\n",
+       "      <th>staff_id</th>\n",
+       "      <th>last_update</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>2005-05-24 22:53:30</td>\n",
+       "      <td>367</td>\n",
+       "      <td>130</td>\n",
+       "      <td>2005-05-26 22:04:30</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2</td>\n",
+       "      <td>2005-05-24 22:54:33</td>\n",
+       "      <td>1525</td>\n",
+       "      <td>459</td>\n",
+       "      <td>2005-05-28 19:40:33</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>3</td>\n",
+       "      <td>2005-05-24 23:03:39</td>\n",
+       "      <td>1711</td>\n",
+       "      <td>408</td>\n",
+       "      <td>2005-06-01 22:12:39</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>4</td>\n",
+       "      <td>2005-05-24 23:04:41</td>\n",
+       "      <td>2452</td>\n",
+       "      <td>333</td>\n",
+       "      <td>2005-06-03 01:43:41</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>5</td>\n",
+       "      <td>2005-05-24 23:05:21</td>\n",
+       "      <td>2079</td>\n",
+       "      <td>222</td>\n",
+       "      <td>2005-06-02 04:33:21</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   rental_id         rental_date  inventory_id  customer_id  \\\n",
+       "0          1 2005-05-24 22:53:30           367          130   \n",
+       "1          2 2005-05-24 22:54:33          1525          459   \n",
+       "2          3 2005-05-24 23:03:39          1711          408   \n",
+       "3          4 2005-05-24 23:04:41          2452          333   \n",
+       "4          5 2005-05-24 23:05:21          2079          222   \n",
+       "\n",
+       "          return_date  staff_id         last_update  \n",
+       "0 2005-05-26 22:04:30         1 2006-02-15 21:30:53  \n",
+       "1 2005-05-28 19:40:33         1 2006-02-15 21:30:53  \n",
+       "2 2005-06-01 22:12:39         1 2006-02-15 21:30:53  \n",
+       "3 2005-06-03 01:43:41         2 2006-02-15 21:30:53  \n",
+       "4 2005-06-02 04:33:21         1 2006-02-15 21:30:53  "
+      ]
+     },
+     "execution_count": 37,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data = pd.read_sql_query('SELECT * FROM sakila.rental', engine)\n",
+    "data.head() "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b52c3845-b5d6-41de-8e5b-2690f079a199",
+   "metadata": {},
+   "source": [
+    "# 2-Write a Python function called rentals_month that retrieves rental data for a given month and year (passed as parameters)\n",
+    "from the Sakila database as a Pandas DataFrame. The function should take in three parameters:\n",
+    "    engine: an object representing the database connection engine to be used to establish a connection to the Sakila database.\n",
+    "month: an integer representing the month for which rental data is to be retrieved.\n",
+    "year: an integer representing the year for which rental data is to be retrieved.\n",
+    "The function should execute a SQL query to retrieve the rental data for the specified month and year from the rental table in the Sakila database, \n",
+    "and return it as a pandas DataFrame.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 65,
+   "id": "e4bc5633-1af0-4617-97fd-b0333c6b06ba",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "\n",
+    "def rentals_month(engine, month, year):\n",
+    "    query = f\"\"\"\n",
+    "        SELECT *\n",
+    "        FROM rental\n",
+    "        WHERE MONTH(rental_date) = {month} AND YEAR(rental_date) = {year};\n",
+    "    \"\"\"\n",
+    "    \n",
+    "    rental_data = pd.read_sql(query, engine)\n",
+    "    return rental_data\n",
+    "\n",
+    "month = 5\n",
+    "year = 2005\n",
+    "data1 = rentals_month(engine, month, year)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 66,
+   "id": "97a5df2c-3f61-4ecf-99e8-fdb6f9592392",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>rental_id</th>\n",
+       "      <th>rental_date</th>\n",
+       "      <th>inventory_id</th>\n",
+       "      <th>customer_id</th>\n",
+       "      <th>return_date</th>\n",
+       "      <th>staff_id</th>\n",
+       "      <th>last_update</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1158</td>\n",
+       "      <td>2005-06-14 22:53:33</td>\n",
+       "      <td>1632</td>\n",
+       "      <td>416</td>\n",
+       "      <td>2005-06-18 21:37:33</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1159</td>\n",
+       "      <td>2005-06-14 22:55:13</td>\n",
+       "      <td>4395</td>\n",
+       "      <td>516</td>\n",
+       "      <td>2005-06-17 02:11:13</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1160</td>\n",
+       "      <td>2005-06-14 23:00:34</td>\n",
+       "      <td>2795</td>\n",
+       "      <td>239</td>\n",
+       "      <td>2005-06-18 01:58:34</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>1161</td>\n",
+       "      <td>2005-06-14 23:07:08</td>\n",
+       "      <td>1690</td>\n",
+       "      <td>285</td>\n",
+       "      <td>2005-06-21 17:12:08</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1162</td>\n",
+       "      <td>2005-06-14 23:09:38</td>\n",
+       "      <td>987</td>\n",
+       "      <td>310</td>\n",
+       "      <td>2005-06-23 22:00:38</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2306</th>\n",
+       "      <td>3465</td>\n",
+       "      <td>2005-06-21 22:10:01</td>\n",
+       "      <td>1488</td>\n",
+       "      <td>510</td>\n",
+       "      <td>2005-06-30 21:35:01</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2307</th>\n",
+       "      <td>3466</td>\n",
+       "      <td>2005-06-21 22:13:33</td>\n",
+       "      <td>371</td>\n",
+       "      <td>226</td>\n",
+       "      <td>2005-06-25 21:01:33</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2308</th>\n",
+       "      <td>3467</td>\n",
+       "      <td>2005-06-21 22:19:25</td>\n",
+       "      <td>729</td>\n",
+       "      <td>543</td>\n",
+       "      <td>2005-06-27 00:03:25</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2309</th>\n",
+       "      <td>3468</td>\n",
+       "      <td>2005-06-21 22:43:45</td>\n",
+       "      <td>2899</td>\n",
+       "      <td>100</td>\n",
+       "      <td>2005-06-30 01:49:45</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2310</th>\n",
+       "      <td>3469</td>\n",
+       "      <td>2005-06-21 22:48:59</td>\n",
+       "      <td>4087</td>\n",
+       "      <td>181</td>\n",
+       "      <td>2005-06-28 19:32:59</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2006-02-15 21:30:53</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>2311 rows × 7 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      rental_id         rental_date  inventory_id  customer_id  \\\n",
+       "0          1158 2005-06-14 22:53:33          1632          416   \n",
+       "1          1159 2005-06-14 22:55:13          4395          516   \n",
+       "2          1160 2005-06-14 23:00:34          2795          239   \n",
+       "3          1161 2005-06-14 23:07:08          1690          285   \n",
+       "4          1162 2005-06-14 23:09:38           987          310   \n",
+       "...         ...                 ...           ...          ...   \n",
+       "2306       3465 2005-06-21 22:10:01          1488          510   \n",
+       "2307       3466 2005-06-21 22:13:33           371          226   \n",
+       "2308       3467 2005-06-21 22:19:25           729          543   \n",
+       "2309       3468 2005-06-21 22:43:45          2899          100   \n",
+       "2310       3469 2005-06-21 22:48:59          4087          181   \n",
+       "\n",
+       "             return_date  staff_id         last_update  \n",
+       "0    2005-06-18 21:37:33         2 2006-02-15 21:30:53  \n",
+       "1    2005-06-17 02:11:13         1 2006-02-15 21:30:53  \n",
+       "2    2005-06-18 01:58:34         2 2006-02-15 21:30:53  \n",
+       "3    2005-06-21 17:12:08         1 2006-02-15 21:30:53  \n",
+       "4    2005-06-23 22:00:38         1 2006-02-15 21:30:53  \n",
+       "...                  ...       ...                 ...  \n",
+       "2306 2005-06-30 21:35:01         1 2006-02-15 21:30:53  \n",
+       "2307 2005-06-25 21:01:33         2 2006-02-15 21:30:53  \n",
+       "2308 2005-06-27 00:03:25         2 2006-02-15 21:30:53  \n",
+       "2309 2005-06-30 01:49:45         1 2006-02-15 21:30:53  \n",
+       "2310 2005-06-28 19:32:59         1 2006-02-15 21:30:53  \n",
+       "\n",
+       "[2311 rows x 7 columns]"
+      ]
+     },
+     "execution_count": 66,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "month = 6\n",
+    "year = 2005\n",
+    "rentals_month(engine, month, year)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3a2a27b5-961f-4a64-a52b-cc3bcb181bbc",
+   "metadata": {},
+   "source": [
+    "# 3Develop a Python function called rental_count_month that takes the DataFrame provided by rentals_month as input along \n",
+    "with the month and year and returns a new DataFrame containing the number of rentals made by each customer_id during \n",
+    "the selected month and year.\n",
+    "The function should also include the month and year as parameters and use them to name the new column according to the month and year, \n",
+    "for example, if the input month is 05 and the year is 2005, the column name should be \"rentals_05_2005\".\n",
+    "Hint: Consider making use of pandas groupby()\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 81,
+   "id": "a7aeaab3-2686-4ec6-b78b-b88439f000d0",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>rentals_5_2005</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>customer_id</th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>3</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>3</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>594</th>\n",
+       "      <td>4</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>595</th>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>596</th>\n",
+       "      <td>6</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>597</th>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>599</th>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>520 rows × 1 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "             rentals_5_2005\n",
+       "customer_id                \n",
+       "1                         2\n",
+       "2                         1\n",
+       "3                         2\n",
+       "5                         3\n",
+       "6                         3\n",
+       "...                     ...\n",
+       "594                       4\n",
+       "595                       1\n",
+       "596                       6\n",
+       "597                       2\n",
+       "599                       1\n",
+       "\n",
+       "[520 rows x 1 columns]"
+      ]
+     },
+     "execution_count": 81,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "def rental_count_month(month, year, df):\n",
+    "    df = df[(df['rental_date'].dt.month == month) & (df['rental_date'].dt.year == year)]\n",
+    "    result = df.groupby('customer_id')['rental_id'].count()\n",
+    "    result = pd.DataFrame(result)\n",
+    "    column_name = f'rentals_{month}_{year}'\n",
+    "    result = result.rename(columns={'rental_id': column_name})\n",
+    "    return result\n",
+    "\n",
+    "data2 = rental_count_month(5, 2005, data1)\n",
+    "data2\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 89,
+   "id": "0ee9f5e8-2ff9-4bf5-9e11-8e7cab200504",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>rentals_6_2005</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>customer_id</th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "Empty DataFrame\n",
+       "Columns: [rentals_6_2005]\n",
+       "Index: []"
+      ]
+     },
+     "execution_count": 89,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data3 = rental_count_month(6, 2005, data1)\n",
+    "data3"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4339b204-c789-4ffa-a560-bee0656549ec",
+   "metadata": {},
+   "source": [
+    "# 4-Create a Python function called compare_rentals that takes two DataFrames as input containing the number of rentals made by each customer\n",
+    "in different months and years. The function should return a combined DataFrame with a new 'difference' column, which is the difference between \n",
+    "the number of rentals in the two months."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 107,
+   "id": "db3ce523-b4a8-4277-b75b-a647d5708591",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def compare_rentals(df1, df2):\n",
+    "    # Merge the DataFrames on 'customer_id'\n",
+    "    merged_df = df1.merge(df2, on='customer_id', how='outer')\n",
+    "    \n",
+    "    # Fill NaN values with 0, as no rentals means a count of 0\n",
+    "    merged_df.fillna(0, inplace=True)\n",
+    "    merged_df = merged_df.reset_index()\n",
+    "    \n",
+    "    # Compute the difference in rentals\n",
+    "    merged_df['difference'] = merged_df.iloc[:, 1] - merged_df.iloc[:, 2]\n",
+    "    \n",
+    "    return merged_df"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 111,
+   "id": "961b05b9-1c05-4796-a3c5-a4637848572e",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>customer_id</th>\n",
+       "      <th>rentals_7_2005</th>\n",
+       "      <th>rentals_5_2005</th>\n",
+       "      <th>difference</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>12</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>10.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2</td>\n",
+       "      <td>14</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>13.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>3</td>\n",
+       "      <td>13</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>11.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>4</td>\n",
+       "      <td>5</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>5</td>\n",
+       "      <td>16</td>\n",
+       "      <td>3.0</td>\n",
+       "      <td>13.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>594</th>\n",
+       "      <td>595</td>\n",
+       "      <td>19</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>18.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>595</th>\n",
+       "      <td>596</td>\n",
+       "      <td>6</td>\n",
+       "      <td>6.0</td>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>596</th>\n",
+       "      <td>597</td>\n",
+       "      <td>7</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>597</th>\n",
+       "      <td>598</td>\n",
+       "      <td>16</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>16.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>598</th>\n",
+       "      <td>599</td>\n",
+       "      <td>7</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>6.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>599 rows × 4 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "     customer_id  rentals_7_2005  rentals_5_2005  difference\n",
+       "0              1              12             2.0        10.0\n",
+       "1              2              14             1.0        13.0\n",
+       "2              3              13             2.0        11.0\n",
+       "3              4               5             0.0         5.0\n",
+       "4              5              16             3.0        13.0\n",
+       "..           ...             ...             ...         ...\n",
+       "594          595              19             1.0        18.0\n",
+       "595          596               6             6.0         0.0\n",
+       "596          597               7             2.0         5.0\n",
+       "597          598              16             0.0        16.0\n",
+       "598          599               7             1.0         6.0\n",
+       "\n",
+       "[599 rows x 4 columns]"
+      ]
+     },
+     "execution_count": 111,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df1 = rentals_month(engine,7,2005)\n",
+    "df2 = rentals_month(engine,5,2005)\n",
+    "data_1 = rental_count_month(7,2005,df1)\n",
+    "data_2 = rental_count_month(5,2005,df2)\n",
+    "compare_rentals(data_1,data_2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 114,
+   "id": "1d50cd1c-72af-4a99-a4e3-c83a7032af01",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>customer_id</th>\n",
+       "      <th>rentals_7_2005</th>\n",
+       "      <th>rentals_5_2005</th>\n",
+       "      <th>difference</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>12</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>10.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2</td>\n",
+       "      <td>14</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>13.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>3</td>\n",
+       "      <td>13</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>11.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>4</td>\n",
+       "      <td>5</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>5</td>\n",
+       "      <td>16</td>\n",
+       "      <td>3.0</td>\n",
+       "      <td>13.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>594</th>\n",
+       "      <td>595</td>\n",
+       "      <td>19</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>18.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>595</th>\n",
+       "      <td>596</td>\n",
+       "      <td>6</td>\n",
+       "      <td>6.0</td>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>596</th>\n",
+       "      <td>597</td>\n",
+       "      <td>7</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>597</th>\n",
+       "      <td>598</td>\n",
+       "      <td>16</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>16.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>598</th>\n",
+       "      <td>599</td>\n",
+       "      <td>7</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>6.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>599 rows × 4 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "     customer_id  rentals_7_2005  rentals_5_2005  difference\n",
+       "0              1              12             2.0        10.0\n",
+       "1              2              14             1.0        13.0\n",
+       "2              3              13             2.0        11.0\n",
+       "3              4               5             0.0         5.0\n",
+       "4              5              16             3.0        13.0\n",
+       "..           ...             ...             ...         ...\n",
+       "594          595              19             1.0        18.0\n",
+       "595          596               6             6.0         0.0\n",
+       "596          597               7             2.0         5.0\n",
+       "597          598              16             0.0        16.0\n",
+       "598          599               7             1.0         6.0\n",
+       "\n",
+       "[599 rows x 4 columns]"
+      ]
+     },
+     "execution_count": 114,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df1 = rentals_month(engine,7,2005)\n",
+    "df2 = rentals_month(engine,5,2005)\n",
+    "data_1 = rental_count_month(7,2005,df1)\n",
+    "data_2 = rental_count_month(5,2005,df2)\n",
+    "compare_rentals(data_1,data_2)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
